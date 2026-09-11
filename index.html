@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planer korków 🥑</title>
+<style>
+  :root {
+    --avo-dark: #33691e;
+    --avo-mid: #689f38;
+    --avo-light: #aed581;
+    --avo-pale: #f1f8e9;
+    --avo-pit: #6d4c2f;
+    --avo-pit-light: #efe4d3;
+    --cream: #fffdf7;
+    --border: #d7e8c2;
+    --text: #2e3d1f;
+    --danger: #c0392b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(180deg, var(--avo-pale) 0%, var(--cream) 300px);
+    color: var(--text);
+    margin: 0;
+    padding: 16px;
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+  .header .icon {
+    font-size: 36px;
+  }
+  h1 {
+    font-size: 20px;
+    margin: 0;
+    color: var(--avo-dark);
+    font-weight: 700;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: #5a6b47;
+    margin: 0 0 16px 0;
+  }
+  .toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .toolbar button {
+    background: var(--cream);
+    border: 1.5px solid var(--avo-light);
+    color: var(--avo-dark);
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .toolbar button:active { transform: scale(0.97); }
+  .toolbar button.danger {
+    border-color: #f1c4bb;
+    color: var(--danger);
+  }
+  #status {
+    font-size: 12px;
+    color: #7a8a68;
+    margin-bottom: 10px;
+    min-height: 16px;
+  }
+  .day-block {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    margin-bottom: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(51,105,30,0.08);
+  }
+  .day-title {
+    background: var(--avo-mid);
+    color: white;
+    padding: 10px 14px;
+    font-size: 15px;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .day-title .count {
+    font-size: 12px;
+    font-weight: 500;
+    background: rgba(255,255,255,0.25);
+    padding: 2px 8px;
+    border-radius: 12px;
+  }
+  .slots {
+    padding: 8px;
+  }
+  .slot {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .slot:last-child { border-bottom: none; }
+  .slot-time {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--avo-dark);
+    width: 78px;
+    flex-shrink: 0;
+  }
+  .slot-content {
+    flex: 1;
+    min-width: 0;
+  }
+  .slot-empty {
+    font-size: 12px;
+    color: #a3b18a;
+    font-style: italic;
+  }
+  .names {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .name-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--avo-pale);
+    border: 1px solid var(--avo-light);
+    color: var(--avo-dark);
+    padding: 3px 8px 3px 10px;
+    border-radius: 14px;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+  .name-pill .x {
+    cursor: pointer;
+    color: var(--avo-mid);
+    font-weight: 900;
+    padding: 0 2px;
+  }
+  .add-btn {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--avo-pit-light);
+    border: 1.5px solid var(--avo-pit);
+    color: var(--avo-pit);
+    font-size: 16px;
+    font-weight: 900;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  .add-btn:active { transform: scale(0.92); }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(46,61,31,0.45);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--cream);
+    border-radius: 16px;
+    padding: 20px;
+    width: 100%;
+    max-width: 320px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+  .modal h3 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    color: var(--avo-dark);
+  }
+  .modal p.sub {
+    margin: 0 0 14px 0;
+    font-size: 13px;
+    color: #7a8a68;
+  }
+  .modal input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1.5px solid var(--avo-light);
+    font-size: 15px;
+    margin-bottom: 6px;
+    background: white;
+    color: var(--text);
+  }
+  .modal input:focus {
+    outline: none;
+    border-color: var(--avo-mid);
+  }
+  .modal-error {
+    color: var(--danger);
+    font-size: 12px;
+    min-height: 16px;
+    margin-bottom: 6px;
+  }
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .modal-actions button {
+    flex: 1;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .btn-cancel {
+    background: var(--avo-pale);
+    color: var(--avo-dark);
+  }
+  .btn-confirm {
+    background: var(--avo-dark);
+    color: white;
+  }
+  .legend {
+    font-size: 11px;
+    color: #8a9a77;
+    text-align: center;
+    margin-top: 10px;
+  }
+  .modal-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .modal-row select {
+    flex: 1;
+    padding: 9px 8px;
+    border-radius: 10px;
+    border: 1.5px solid var(--avo-light);
+    font-size: 14px;
+    background: white;
+    color: var(--text);
+  }
+  .slot.conflict {
+    background: #fdecea;
+  }
+  .lesson-row {
+    background: var(--avo-pale);
+    border-left: 4px solid var(--avo-mid);
+    border-radius: 0 10px 10px 0;
+    margin: 2px 0;
+  }
+  .lesson-row .slot-time {
+    align-self: flex-start;
+    margin-top: 2px;
+  }
+  .color-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 4px 0 10px 0;
+  }
+  .color-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .color-swatch.selected {
+    border-color: var(--avo-dark);
+  }
+  .color-swatch .check {
+    color: white;
+    font-size: 13px;
+    font-weight: 900;
+    display: none;
+  }
+  .color-swatch.selected .check {
+    display: block;
+  }
+  .name-pill.conflict {
+    background: #fdecea;
+    border-color: #e8a49a;
+    color: var(--danger);
+  }
+  .slot-time.conflict-label {
+    color: var(--danger);
+  }
+  .tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    background: var(--avo-pale);
+    border-radius: 14px;
+    padding: 4px;
+  }
+  .tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 9px 8px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--avo-dark);
+    cursor: pointer;
+  }
+  .tab-btn.active {
+    background: var(--cream);
+    box-shadow: 0 1px 3px rgba(51,105,30,0.15);
+  }
+  .add-student-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .add-student-row input {
+    flex: 1;
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: 1.5px solid var(--avo-light);
+    font-size: 14px;
+    background: white;
+    color: var(--text);
+  }
+  .add-student-row button {
+    background: var(--avo-dark);
+    color: white;
+    border: none;
+    padding: 9px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .student-card {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    margin-bottom: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(51,105,30,0.08);
+  }
+  .student-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    color: white;
+  }
+  .student-head .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: white;
+    flex-shrink: 0;
+  }
+  .student-head .name {
+    flex: 1;
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .student-head .remove-student {
+    cursor: pointer;
+    font-size: 16px;
+    opacity: 0.9;
+    padding: 2px 4px;
+  }
+  .student-body {
+    padding: 12px;
+  }
+  .payment-banner {
+    background: #fdecea;
+    border: 1px solid #e8a49a;
+    color: var(--danger);
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 12.5px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .payment-banner button {
+    background: var(--danger);
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .status-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12.5px;
+    color: #5a6b47;
+    margin-bottom: 10px;
+  }
+  .status-row b {
+    color: var(--avo-dark);
+  }
+  .lesson-log-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .lesson-log-row:last-child { border-bottom: none; }
+  .lesson-log-row input[type="date"] {
+    width: 118px;
+    flex-shrink: 0;
+    padding: 6px;
+    border-radius: 8px;
+    border: 1px solid var(--avo-light);
+    font-size: 12px;
+    background: white;
+    color: var(--text);
+  }
+  .lesson-log-row input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--avo-light);
+    font-size: 12.5px;
+    background: white;
+    color: var(--text);
+  }
+  .lesson-log-row input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    accent-color: var(--avo-mid);
+  }
+  .lesson-log-row .x {
+    cursor: pointer;
+    color: var(--danger);
+    font-weight: 900;
+    font-size: 15px;
+    padding: 0 2px;
+    flex-shrink: 0;
+  }
+  .add-lesson-btn {
+    margin-top: 8px;
+    width: 100%;
+    background: var(--avo-pit-light);
+    border: 1.5px dashed var(--avo-pit);
+    color: var(--avo-pit);
+    padding: 8px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .empty-hint {
+    font-size: 12px;
+    color: #a3b18a;
+    font-style: italic;
+    text-align: center;
+    padding: 10px 0;
+  }
+  .remove-student-btn {
+    margin-top: 8px;
+    width: 100%;
+    background: transparent;
+    border: 1.5px solid #f1c4bb;
+    color: var(--danger);
+    padding: 8px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span class="icon">🥑</span>
+  <div>
+    <h1>Planer korków</h1>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" id="tabPlanBtn">📅 Plan zajęć</button>
+  <button class="tab-btn" id="tabBillingBtn">💰 Rozliczenia</button>
+</div>
+
+<div id="planSection">
+<p class="subtitle">Pon–Pt 14:00–18:00 · Sob 9:00–16:00 · Ndz 9:00–12:00 · sloty co 30 min</p>
+
+<div class="toolbar">
+  <button id="exportBtn">📋 Kopiuj plan</button>
+  <button id="clearBtn" class="danger">🗑 Wyczyść wszystko</button>
+</div>
+<div id="status"></div>
+
+<div id="grid"></div>
+
+<p class="legend">Dane zapisują się automatycznie na tym urządzeniu.</p>
+</div>
+
+<div id="billingSection" style="display:none">
+  <p class="subtitle">Pakiet: 4 zajęcia = 250 zł</p>
+  <div class="toolbar">
+    <button id="importBtn">🔄 Importuj uczniów z planu</button>
+  </div>
+  <div class="add-student-row">
+    <input type="text" id="newStudentInput" placeholder="Dodaj ucznia ręcznie…" autocomplete="off">
+    <button id="addStudentBtn">Dodaj</button>
+  </div>
+  <div id="billingStatus"></div>
+  <div id="billingList"></div>
+  <p class="legend">Dane zapisują się automatycznie na tym urządzeniu.</p>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle">Dodaj ucznia</h3>
+    <p class="sub" id="modalSub"></p>
+    <input type="text" id="modalInput" placeholder="Imię i nazwisko" autocomplete="off">
+    <div class="modal-row">
+      <select id="modalStart"></select>
+      <select id="modalDuration">
+        <option value="30">30 min</option>
+        <option value="60" selected>60 min</option>
+        <option value="90">90 min</option>
+      </select>
+    </div>
+    <div class="color-row" id="modalColors"></div>
+    <div class="modal-error" id="modalError"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="modalCancel">Anuluj</button>
+      <button class="btn-confirm" id="modalConfirm">Dodaj</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function range30(startHour, endHour) {
+  const out = [];
+  for (let h = startHour * 2; h < endHour * 2; h++) out.push(h / 2);
+  return out;
+}
+
+const DAYS = [
+  { key: 'pon', label: 'Poniedziałek', hours: range30(14, 18) },
+  { key: 'wt',  label: 'Wtorek',       hours: range30(14, 18) },
+  { key: 'sr',  label: 'Środa',        hours: range30(14, 18) },
+  { key: 'czw', label: 'Czwartek',     hours: range30(14, 18) },
+  { key: 'pt',  label: 'Piątek',       hours: range30(14, 18) },
+  { key: 'sob', label: 'Sobota',       hours: range30(9, 16) },
+  { key: 'ndz', label: 'Niedziela',    hours: range30(9, 12) },
+];
+
+function fmtClock(h) {
+  const hh = Math.floor(h);
+  const mm = h % 1 === 0.5 ? '30' : '00';
+  return String(hh).padStart(2,'0') + ':' + mm;
+}
+
+function fmtRange(start, durationMin) {
+  return fmtClock(start) + '–' + fmtClock(start + durationMin / 60);
+}
+
+const STORAGE_KEY = 'planer-korki-schedule-v2';
+let schedule = {}; // { dayKey: [ {id, name, start, duration} ] }
+let pendingDay = null;
+
+async function apiGet(key) {
+  const res = await fetch('/api/store?key=' + encodeURIComponent(key));
+  if (!res.ok) throw new Error('fetch failed');
+  return res.json();
+}
+
+async function apiSet(key, value) {
+  const res = await fetch('/api/store?key=' + encodeURIComponent(key), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(value)
+  });
+  if (!res.ok) throw new Error('save failed');
+  return true;
+}
+
+function setStatus(msg, isError) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.style.color = isError ? '#c0392b' : '#7a8a68';
+  if (msg) setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 2500);
+}
+
+async function loadSchedule() {
+  try {
+    const data = await apiGet(STORAGE_KEY);
+    schedule = data || {};
+  } catch (e) {
+    schedule = {};
+    setStatus('Błąd wczytywania (sprawdź połączenie).', true);
+  }
+  render();
+}
+
+async function saveSchedule() {
+  try {
+    await apiSet(STORAGE_KEY, schedule);
+  } catch (e) {
+    setStatus('Nie udało się zapisać.', true);
+  }
+}
+
+function dayEnd(day) {
+  return day.hours[day.hours.length - 1] + 0.5;
+}
+
+const UNIT_HEIGHT_PX = 46;
+
+const COLORS = [
+  { id: 'green',  hex: '#689f38' },
+  { id: 'blue',   hex: '#3d7ea6' },
+  { id: 'purple', hex: '#8e5db3' },
+  { id: 'pink',   hex: '#d1618a' },
+  { id: 'orange', hex: '#e08a3c' },
+  { id: 'yellow', hex: '#c9a520' },
+  { id: 'teal',   hex: '#2f9e8f' },
+  { id: 'brown',  hex: '#8a6142' },
+];
+let selectedColor = COLORS[0].id;
+
+function colorHex(id) {
+  const c = COLORS.find(c => c.id === id);
+  return c ? c.hex : COLORS[0].hex;
+}
+
+function freeStartsForDay(day) {
+  const lessons = schedule[day.key] || [];
+  return day.hours.filter(t => !lessons.some(l => t >= l.start && t < l.start + l.duration / 60));
+}
+
+function computeDayBlocks(day) {
+  const lessons = (schedule[day.key] || []).slice().sort((a, b) => a.start - b.start);
+  const start = day.hours[0];
+  const end = dayEnd(day);
+  const blocks = [];
+  let cursor = start;
+  lessons.forEach(l => {
+    if (l.start > cursor) blocks.push({ type: 'free', start: cursor, end: l.start });
+    blocks.push({ type: 'lesson', lesson: l });
+    cursor = Math.max(cursor, l.start + l.duration / 60);
+  });
+  if (cursor < end) blocks.push({ type: 'free', start: cursor, end: end });
+  return blocks;
+}
+
+function render() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  DAYS.forEach(day => {
+    const dayLessons = schedule[day.key] || [];
+    const blocks = computeDayBlocks(day);
+
+    const block = document.createElement('div');
+    block.className = 'day-block';
+
+    const title = document.createElement('div');
+    title.className = 'day-title';
+    const n = dayLessons.length;
+    title.innerHTML = '<span>' + day.label + '</span><span class="count">' + n + ' zapis' + (n===1?'':(n>=2&&n<=4?'y':'ów')) + '</span>';
+    block.appendChild(title);
+
+    const slotsWrap = document.createElement('div');
+    slotsWrap.className = 'slots';
+
+    blocks.forEach(b => {
+      const row = document.createElement('div');
+      row.className = 'slot';
+
+      const time = document.createElement('div');
+      time.className = 'slot-time';
+
+      const content = document.createElement('div');
+      content.className = 'slot-content';
+
+      if (b.type === 'free') {
+        time.textContent = fmtRange(b.start, (b.end - b.start) * 60);
+        const empty = document.createElement('div');
+        empty.className = 'slot-empty';
+        empty.textContent = 'wolne';
+        content.appendChild(empty);
+        row.appendChild(time);
+        row.appendChild(content);
+
+        const addBtn = document.createElement('button');
+        addBtn.className = 'add-btn';
+        addBtn.textContent = '+';
+        addBtn.setAttribute('aria-label', 'Dodaj do ' + day.label + ' od ' + fmtClock(b.start));
+        addBtn.onclick = () => openModal(day, b.start);
+        row.appendChild(addBtn);
+      } else {
+        const lesson = b.lesson;
+        time.textContent = fmtRange(lesson.start, lesson.duration);
+        row.appendChild(time);
+
+        const namesWrap = document.createElement('div');
+        namesWrap.className = 'names';
+        const pill = document.createElement('span');
+        pill.className = 'name-pill';
+        const hex = colorHex(lesson.color);
+        pill.style.background = hex;
+        pill.style.borderColor = hex;
+        pill.style.color = '#ffffff';
+        const span = document.createElement('span');
+        span.textContent = lesson.name;
+        pill.appendChild(span);
+        const x = document.createElement('span');
+        x.className = 'x';
+        x.textContent = '✕';
+        x.style.color = '#ffffff';
+        x.setAttribute('aria-label', 'Usuń ' + lesson.name);
+        x.onclick = () => removeLesson(day.key, lesson.id);
+        pill.appendChild(x);
+        namesWrap.appendChild(pill);
+        content.appendChild(namesWrap);
+        row.appendChild(content);
+
+        row.classList.add('lesson-row');
+        row.style.borderLeftColor = hex;
+        row.style.background = hex + '1a';
+        const units = lesson.duration / 30;
+        row.style.minHeight = (UNIT_HEIGHT_PX * units) + 'px';
+      }
+
+      slotsWrap.appendChild(row);
+    });
+
+    block.appendChild(slotsWrap);
+    grid.appendChild(block);
+  });
+}
+
+function removeLesson(dayKey, id) {
+  if (!schedule[dayKey]) return;
+  schedule[dayKey] = schedule[dayKey].filter(l => l.id !== id);
+  if (schedule[dayKey].length === 0) delete schedule[dayKey];
+  render();
+  saveSchedule();
+}
+
+function openModal(day, defaultStart) {
+  pendingDay = day;
+  document.getElementById('modalTitle').textContent = 'Dodaj ucznia';
+  document.getElementById('modalSub').textContent = day.label;
+  const input = document.getElementById('modalInput');
+  input.value = '';
+
+  const startSel = document.getElementById('modalStart');
+  startSel.innerHTML = '';
+  const freeStarts = freeStartsForDay(day);
+  freeStarts.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t;
+    opt.textContent = fmtClock(t);
+    if (t === defaultStart) opt.selected = true;
+    startSel.appendChild(opt);
+  });
+
+  document.getElementById('modalDuration').value = '60';
+
+  selectedColor = COLORS[0].id;
+  const colorsWrap = document.getElementById('modalColors');
+  colorsWrap.innerHTML = '';
+  COLORS.forEach(c => {
+    const sw = document.createElement('div');
+    sw.className = 'color-swatch' + (c.id === selectedColor ? ' selected' : '');
+    sw.style.background = c.hex;
+    sw.setAttribute('aria-label', 'Kolor ' + c.id);
+    const check = document.createElement('span');
+    check.className = 'check';
+    check.textContent = '✓';
+    sw.appendChild(check);
+    sw.onclick = () => {
+      selectedColor = c.id;
+      colorsWrap.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
+      sw.classList.add('selected');
+    };
+    colorsWrap.appendChild(sw);
+  });
+
+  document.getElementById('modalError').textContent = '';
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(() => input.focus(), 50);
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  pendingDay = null;
+}
+
+function confirmModal() {
+  const input = document.getElementById('modalInput');
+  const val = input.value.trim();
+  if (!val) {
+    document.getElementById('modalError').textContent = 'Wpisz imię i nazwisko.';
+    return;
+  }
+  const start = parseFloat(document.getElementById('modalStart').value);
+  const duration = parseInt(document.getElementById('modalDuration').value, 10);
+
+  if (!schedule[pendingDay.key]) schedule[pendingDay.key] = [];
+  schedule[pendingDay.key].push({
+    id: Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+    name: val,
+    start: start,
+    duration: duration,
+    color: selectedColor
+  });
+
+  const willOverlap = schedule[pendingDay.key].some(l =>
+    l.name !== val && start < l.start + l.duration / 60 && start + duration / 60 > l.start
+  );
+
+  closeModal();
+  render();
+  saveSchedule();
+  if (willOverlap) setStatus('Uwaga: ten termin nakłada się na inny zapis (zaznaczone na czerwono).', true);
+};
+
+document.getElementById('modalCancel').onclick = closeModal;
+document.getElementById('modalConfirm').onclick = confirmModal;
+document.getElementById('modalInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') confirmModal();
+});
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target.id === 'modalOverlay') closeModal();
+});
+
+document.getElementById('exportBtn').onclick = async () => {
+  let text = 'PLAN KORKÓW\n\n';
+  DAYS.forEach(day => {
+    const lessons = (schedule[day.key] || []).slice().sort((a,b) => a.start - b.start);
+    if (lessons.length > 0) {
+      text += day.label + ':\n';
+      lessons.forEach(l => {
+        text += '  ' + fmtRange(l.start, l.duration) + ' — ' + l.name + '\n';
+      });
+      text += '\n';
+    }
+  });
+  if (text.trim() === 'PLAN KORKÓW') text += '(brak zapisów)';
+  try {
+    await navigator.clipboard.writeText(text);
+    setStatus('Skopiowano plan do schowka.');
+  } catch (e) {
+    setStatus('Nie udało się skopiować.', true);
+  }
+};
+
+document.getElementById('clearBtn').onclick = () => {
+  if (confirm('Na pewno usunąć wszystkie zapisy?')) {
+    schedule = {};
+    render();
+    saveSchedule();
+    setStatus('Wyczyszczono plan.');
+  }
+};
+
+// ===== ROZLICZENIA =====
+const BILLING_KEY = 'planer-korki-billing-v1';
+const PACKAGE_SIZE = 4;
+const PACKAGE_PRICE = 250;
+const PRICE_PER_LESSON = PACKAGE_PRICE / PACKAGE_SIZE;
+let billingStudents = []; // { id, name, color, paidPackages, lessons: [{id,date,topic,attended}] }
+
+function todayISO() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function setBillingStatus(msg, isError) {
+  const el = document.getElementById('billingStatus');
+  el.textContent = msg;
+  el.style.color = isError ? '#c0392b' : '#7a8a68';
+  el.style.fontSize = '12px';
+  el.style.marginBottom = '8px';
+  if (msg) setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 3000);
+}
+
+async function loadBilling() {
+  try {
+    const data = await apiGet(BILLING_KEY);
+    billingStudents = data || [];
+  } catch (e) {
+    billingStudents = [];
+    setBillingStatus('Błąd wczytywania (sprawdź połączenie).', true);
+  }
+  renderBilling();
+}
+
+async function saveBilling() {
+  try {
+    await apiSet(BILLING_KEY, billingStudents);
+  } catch (e) {
+    setBillingStatus('Nie udało się zapisać.', true);
+  }
+}
+
+function findStudentByName(name) {
+  const key = name.trim().toLowerCase();
+  return billingStudents.find(s => s.name.trim().toLowerCase() === key);
+}
+
+function importFromPlan() {
+  let added = 0;
+  DAYS.forEach(day => {
+    (schedule[day.key] || []).forEach(l => {
+      if (!findStudentByName(l.name)) {
+        billingStudents.push({
+          id: Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+          name: l.name,
+          color: l.color || 'green',
+          paidPackages: 0,
+          lessons: []
+        });
+        added++;
+      }
+    });
+  });
+  renderBilling();
+  saveBilling();
+  setBillingStatus(added > 0 ? ('Zaimportowano uczniów: ' + added) : 'Brak nowych uczniów do zaimportowania.');
+}
+
+function addStudentManually() {
+  const input = document.getElementById('newStudentInput');
+  const val = input.value.trim();
+  if (!val) return;
+  if (findStudentByName(val)) {
+    setBillingStatus('Ten uczeń już jest na liście.', true);
+    return;
+  }
+  billingStudents.push({
+    id: Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+    name: val,
+    color: 'green',
+    paidPackages: 0,
+    lessons: []
+  });
+  input.value = '';
+  renderBilling();
+  saveBilling();
+}
+
+function removeStudent(id) {
+  const s = billingStudents.find(s => s.id === id);
+  if (!s) return;
+  if (!confirm('Usunąć ' + s.name + ' wraz z historią zajęć?')) return;
+  billingStudents = billingStudents.filter(s => s.id !== id);
+  renderBilling();
+  saveBilling();
+}
+
+function addLessonRow(studentId) {
+  const s = billingStudents.find(s => s.id === studentId);
+  if (!s) return;
+  s.lessons.push({
+    id: Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+    date: todayISO(),
+    topic: '',
+    attended: false
+  });
+  renderBilling();
+  saveBilling();
+}
+
+function removeLessonRow(studentId, lessonId) {
+  const s = billingStudents.find(s => s.id === studentId);
+  if (!s) return;
+  s.lessons = s.lessons.filter(l => l.id !== lessonId);
+  renderBilling();
+  saveBilling();
+}
+
+function updateLessonField(studentId, lessonId, field, value) {
+  const s = billingStudents.find(s => s.id === studentId);
+  if (!s) return;
+  const l = s.lessons.find(l => l.id === lessonId);
+  if (!l) return;
+  l[field] = value;
+  renderBilling();
+  saveBilling();
+}
+
+function markPaid(studentId) {
+  const s = billingStudents.find(s => s.id === studentId);
+  if (!s) return;
+  const attendedCount = s.lessons.filter(l => l.attended).length;
+  s.paidPackages = Math.floor(attendedCount / PACKAGE_SIZE);
+  renderBilling();
+  saveBilling();
+  setBillingStatus('Zapisano płatność dla ' + s.name + '.');
+}
+
+function studentStats(s) {
+  const attendedCount = s.lessons.filter(l => l.attended).length;
+  const cyklAttended = attendedCount - s.paidPackages * PACKAGE_SIZE;
+  const duePackages = Math.floor(cyklAttended / PACKAGE_SIZE);
+  const inCycle = cyklAttended - duePackages * PACKAGE_SIZE;
+  const lessonsUntilPayment = duePackages > 0 ? 0 : (PACKAGE_SIZE - cyklAttended);
+  const balance = duePackages > 0 ? 0 : Math.max(0, PACKAGE_PRICE - cyklAttended * PRICE_PER_LESSON);
+  return { attendedCount, cyklAttended, duePackages, inCycle, lessonsUntilPayment, balance };
+}
+
+function renderBilling() {
+  const list = document.getElementById('billingList');
+  list.innerHTML = '';
+
+  if (billingStudents.length === 0) {
+    const hint = document.createElement('p');
+    hint.className = 'empty-hint';
+    hint.textContent = 'Brak uczniów. Zaimportuj z planu albo dodaj ręcznie powyżej.';
+    list.appendChild(hint);
+    return;
+  }
+
+  billingStudents.slice().sort((a,b) => a.name.localeCompare(b.name, 'pl')).forEach(s => {
+    const stats = studentStats(s);
+    const hex = colorHex(s.color);
+
+    const card = document.createElement('div');
+    card.className = 'student-card';
+
+    const head = document.createElement('div');
+    head.className = 'student-head';
+    head.style.background = hex;
+    const dot = document.createElement('span');
+    dot.className = 'dot';
+    head.appendChild(dot);
+    const nameEl = document.createElement('span');
+    nameEl.className = 'name';
+    nameEl.textContent = s.name;
+    head.appendChild(nameEl);
+    const rm = document.createElement('span');
+    rm.className = 'remove-student';
+    rm.textContent = '✕';
+    rm.onclick = () => removeStudent(s.id);
+    head.appendChild(rm);
+    card.appendChild(head);
+
+    const body = document.createElement('div');
+    body.className = 'student-body';
+
+    if (stats.duePackages > 0) {
+      const banner = document.createElement('div');
+      banner.className = 'payment-banner';
+      const amount = stats.duePackages * PACKAGE_PRICE;
+      const txt = document.createElement('span');
+      txt.textContent = 'Termin płatności: ' + stats.duePackages + ' pakiet' + (stats.duePackages===1?'':'y') + ' × 250 zł = ' + amount + ' zł';
+      banner.appendChild(txt);
+      const btn = document.createElement('button');
+      btn.textContent = 'Oznacz jako opłacone';
+      btn.onclick = () => markPaid(s.id);
+      banner.appendChild(btn);
+      body.appendChild(banner);
+    } else {
+      const statusRow = document.createElement('div');
+      statusRow.className = 'status-row';
+      const left = document.createElement('span');
+      left.innerHTML = 'Do zapłaty za: <b>' + stats.lessonsUntilPayment + ' zaj.</b>';
+      const right = document.createElement('span');
+      right.innerHTML = 'Saldo pakietu: <b>' + stats.balance.toFixed(2) + ' zł</b>';
+      statusRow.appendChild(left);
+      statusRow.appendChild(right);
+      body.appendChild(statusRow);
+    }
+
+    if (s.lessons.length > 0) {
+      const sorted = s.lessons.slice().sort((a,b) => (a.date||'').localeCompare(b.date||''));
+      sorted.forEach(l => {
+        const row = document.createElement('div');
+        row.className = 'lesson-log-row';
+
+        const dateInput = document.createElement('input');
+        dateInput.type = 'date';
+        dateInput.value = l.date || '';
+        dateInput.onchange = e => updateLessonField(s.id, l.id, 'date', e.target.value);
+        row.appendChild(dateInput);
+
+        const topicInput = document.createElement('input');
+        topicInput.type = 'text';
+        topicInput.placeholder = 'Temat zajęć';
+        topicInput.value = l.topic || '';
+        topicInput.onchange = e => updateLessonField(s.id, l.id, 'topic', e.target.value);
+        row.appendChild(topicInput);
+
+        const check = document.createElement('input');
+        check.type = 'checkbox';
+        check.checked = !!l.attended;
+        check.title = 'Zajęcia się odbyły';
+        check.onchange = e => updateLessonField(s.id, l.id, 'attended', e.target.checked);
+        row.appendChild(check);
+
+        const x = document.createElement('span');
+        x.className = 'x';
+        x.textContent = '✕';
+        x.onclick = () => removeLessonRow(s.id, l.id);
+        row.appendChild(x);
+
+        body.appendChild(row);
+      });
+    }
+
+    const addBtn = document.createElement('button');
+    addBtn.className = 'add-lesson-btn';
+    addBtn.textContent = '+ Dodaj zajęcia';
+    addBtn.onclick = () => addLessonRow(s.id);
+    body.appendChild(addBtn);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'remove-student-btn';
+    removeBtn.textContent = '🗑 Usuń ucznia (rezygnacja)';
+    removeBtn.onclick = () => removeStudent(s.id);
+    body.appendChild(removeBtn);
+
+    card.appendChild(body);
+    list.appendChild(card);
+  });
+}
+
+document.getElementById('importBtn').onclick = importFromPlan;
+document.getElementById('addStudentBtn').onclick = addStudentManually;
+document.getElementById('newStudentInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addStudentManually();
+});
+
+document.getElementById('tabPlanBtn').onclick = () => {
+  document.getElementById('planSection').style.display = '';
+  document.getElementById('billingSection').style.display = 'none';
+  document.getElementById('tabPlanBtn').classList.add('active');
+  document.getElementById('tabBillingBtn').classList.remove('active');
+};
+document.getElementById('tabBillingBtn').onclick = () => {
+  document.getElementById('planSection').style.display = 'none';
+  document.getElementById('billingSection').style.display = '';
+  document.getElementById('tabBillingBtn').classList.add('active');
+  document.getElementById('tabPlanBtn').classList.remove('active');
+};
+
+loadSchedule();
+loadBilling();
+</script>
+</body>
+</html>
