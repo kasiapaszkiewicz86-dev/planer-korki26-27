@@ -513,7 +513,7 @@
 </div>
 
 <div id="planSection">
-<p class="subtitle">Pon–Pt 14:00–18:00 · Sob 9:00–16:00 · Ndz 9:00–12:00 · sloty co 30 min</p>
+<p class="subtitle">Pon–Nie 9:00–19:00 (Pon–Pt od 14:00) · sloty co 30 min</p>
 
 <div class="toolbar">
   <button id="exportBtn">📋 Kopiuj plan</button>
@@ -570,13 +570,13 @@ function range30(startHour, endHour) {
 }
 
 const DAYS = [
-  { key: 'pon', label: 'Poniedziałek', hours: range30(14, 18) },
-  { key: 'wt',  label: 'Wtorek',       hours: range30(14, 18) },
-  { key: 'sr',  label: 'Środa',        hours: range30(14, 18) },
-  { key: 'czw', label: 'Czwartek',     hours: range30(14, 18) },
-  { key: 'pt',  label: 'Piątek',       hours: range30(14, 18) },
-  { key: 'sob', label: 'Sobota',       hours: range30(9, 16) },
-  { key: 'ndz', label: 'Niedziela',    hours: range30(9, 12) },
+  { key: 'pon', label: 'Poniedziałek', hours: range30(14, 19) },
+  { key: 'wt',  label: 'Wtorek',       hours: range30(14, 19) },
+  { key: 'sr',  label: 'Środa',        hours: range30(14, 19) },
+  { key: 'czw', label: 'Czwartek',     hours: range30(14, 19) },
+  { key: 'pt',  label: 'Piątek',       hours: range30(14, 19) },
+  { key: 'sob', label: 'Sobota',       hours: range30(9, 19) },
+  { key: 'ndz', label: 'Niedziela',    hours: range30(9, 19) },
 ];
 
 function fmtClock(h) {
@@ -594,7 +594,7 @@ let schedule = {}; // { dayKey: [ {id, name, start, duration} ] }
 let pendingDay = null;
 
 async function apiGet(key) {
-  const res = await fetch('/api/store?key=' + encodeURIComponent(key));
+  const res = await fetch('/api/store?key=' + encodeURIComponent(key), { cache: 'no-store' });
   if (!res.ok) throw new Error('fetch failed');
   return res.json();
 }
@@ -602,6 +602,7 @@ async function apiGet(key) {
 async function apiSet(key, value) {
   const res = await fetch('/api/store?key=' + encodeURIComponent(key), {
     method: 'POST',
+    cache: 'no-store',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(value)
   });
@@ -1173,6 +1174,13 @@ document.getElementById('tabBillingBtn').onclick = () => {
 
 loadSchedule();
 loadBilling();
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    loadSchedule();
+    loadBilling();
+  }
+});
 </script>
 </body>
 </html>
