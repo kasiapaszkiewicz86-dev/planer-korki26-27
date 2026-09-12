@@ -11,13 +11,17 @@ export default async (req) => {
     });
   }
 
-  const store = getStore("planer-korki");
+  const store = getStore({ name: "planer-korki", consistency: "strong" });
+  const noCacheHeaders = {
+    "Content-Type": "application/json",
+    "Cache-Control": "no-store, no-cache, must-revalidate"
+  };
 
   if (req.method === "GET") {
     const value = await store.get(key);
     return new Response(value ?? "null", {
       status: 200,
-      headers: { "Content-Type": "application/json" }
+      headers: noCacheHeaders
     });
   }
 
@@ -26,7 +30,7 @@ export default async (req) => {
     await store.set(key, body);
     return new Response(JSON.stringify({ ok: true }), {
       status: 200,
-      headers: { "Content-Type": "application/json" }
+      headers: noCacheHeaders
     });
   }
 
